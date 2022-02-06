@@ -13,6 +13,8 @@ DIR = .
 FILE = Dockerfile
 IMAGE = devilbox/php-fpm-8.2
 TAG = latest
+ARCH = linux/amd64
+NO_CACHE =
 
 
 # -------------------------------------------------------------------------------------------------
@@ -41,13 +43,17 @@ lint-workflow:
 	GIT_CURR_MAJOR="$$( git tag | sort -V | tail -1 | sed 's|\.[0-9]*$$||g' )"; \
 	GIT_CURR_MINOR="$$( git tag | sort -V | tail -1 | sed 's|^[0-9]*\.||g' )"; \
 	GIT_NEXT_TAG="$${GIT_CURR_MAJOR}.$$(( GIT_CURR_MINOR + 1 ))"; \
-	if ! grep 'refs:' -A 100 .github/workflows/nightly.yml \
-		| grep  "          - '$${GIT_NEXT_TAG}'" >/dev/null; then \
-		echo "[ERR] New Tag required in .github/workflows/nightly.yml: $${GIT_NEXT_TAG}"; \
-		exit 1; \
-	else \
-		echo "[OK] Git Tag present in .github/workflows/nightly.yml: $${GIT_NEXT_TAG}"; \
-	fi
+	grep 'refs:' -A 100 .github/workflows/nightly.yml \
+	| grep '^          -' \
+	| grep -v master \
+	| while read -r i; do \
+		if ! echo "$${i}" | grep -- "- '$${GIT_NEXT_TAG}'" >/dev/null; then \
+			echo "[ERR] New Tag required in .github/workflows/nightly.yml: $${GIT_NEXT_TAG}"; \
+			exit 1; \
+		else \
+			echo "[OK] Git Tag present in .github/workflows/nightly.yml: $${GIT_NEXT_TAG}"; \
+		fi \
+	done
 
 
 # -------------------------------------------------------------------------------------------------
@@ -55,10 +61,11 @@ lint-workflow:
 # -------------------------------------------------------------------------------------------------
 
 build:
-	docker build -t $(IMAGE) -f $(DIR)/$(FILE) $(DIR)
+	docker buildx build --output type=docker --platform=$(ARCH) $(NO_CACHE) -t $(IMAGE) -f $(DIR)/$(FILE) $(DIR)
 
+rebuild: NO_CACHE=--no-cache
 rebuild: pull-base-image
-	docker build --no-cache -t $(IMAGE) -f $(DIR)/$(FILE) $(DIR)
+rebuild: build
 
 
 # -------------------------------------------------------------------------------------------------
@@ -66,11 +73,11 @@ rebuild: pull-base-image
 # -------------------------------------------------------------------------------------------------
 
 test:
-	./tests/test.sh $(IMAGE)
+	./tests/test.sh $(IMAGE) $(ARCH)
 
 update-readme:
 	cat "./README.md" \
-		| perl -00 -pe "s/<!-- modules -->.*<!-- \/modules -->/<!-- modules -->\n$$(./tests/get-modules.sh)\n<!-- \/modules -->/s" \
+		| perl -0 -pe "s/<!-- modules -->.*<!-- \/modules -->/<!-- modules -->\n$$(./tests/get-modules.sh $(IMAGE) $(ARCH))\n<!-- \/modules -->/s" \
 		> "./README.md.tmp"
 	yes | mv -f "./README.md.tmp" "./README.md"
 

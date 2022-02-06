@@ -16,18 +16,22 @@ on:
   push:
 
 
-# -------------------------------------------------------------------------------------------------
-# What to run
-# -------------------------------------------------------------------------------------------------
 jobs:
+
+  # -----------------------------------------------------------------------------------------------
+  # Job: BUILD
+  # -----------------------------------------------------------------------------------------------
   build:
-    name: "[ PHP-${{ matrix.version }} ]"
+    name: "[ PHP-${{ matrix.version }} (${{ matrix.arch }}) ]"
     runs-on: ubuntu-latest
     strategy:
-      fail-fast: False
+      fail-fast: false
       matrix:
         version:
           - '8.2'
+        arch:
+          - 'linux/amd64'
+          - 'linux/arm64'
     steps:
 
       # ------------------------------------------------------------
@@ -37,6 +41,16 @@ jobs:
         uses: actions/checkout@v2
         with:
           fetch-depth: 0
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: arm64
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
 
       - name: Set variables
         id: vars
@@ -95,8 +109,9 @@ jobs:
             done;
             return 1;
           }
-          retry make build
+          retry make build ARCH=${ARCH}
         env:
+          ARCH: ${{ matrix.arch }}
           RETRIES: 20
           PAUSE: 10
 
@@ -117,8 +132,9 @@ jobs:
             done;
             return 1;
           }
-          retry make test
+          retry make test ARCH=${ARCH}
         env:
+          ARCH: ${{ matrix.arch }}
           RETRIES: 20
           PAUSE: 10
 
@@ -136,9 +152,10 @@ jobs:
             done;
             return 1;
           }
-          retry make update-readme
+          retry make update-readme ARCH=${ARCH}
           git diff --quiet || { echo "Build Changes"; git diff; git status; false; }
         env:
+          ARCH: ${{ matrix.arch }}
           RETRIES: 20
           PAUSE: 10
 
@@ -146,7 +163,7 @@ jobs:
       # ------------------------------------------------------------
       # Deploy
       # ------------------------------------------------------------
-      - name: Publish images (only repo owner)
+      - name: Publish architecture images (only repo owner)
         run: |
           retry() {
             for n in $(seq ${RETRIES}); do
@@ -172,8 +189,117 @@ jobs:
 
           # Login and Push
           retry make login USER=${{ secrets.DOCKERHUB_USERNAME }} PASS=${{ secrets.DOCKERHUB_PASSWORD }}
-          retry make push TAG=${DOCKER_TAG}
+          retry make push TAG=${DOCKER_TAG}-manifest-${ARCH##*/}
+        env:
+          ARCH: ${{ matrix.arch }}
+          RETRIES: 20
+          PAUSE: 10
+        # https://help.github.com/en/github/automating-your-workflow-with-github-actions/contexts-and-expression-syntax-for-github-actions#functions
+        if: github.event.pull_request.base.repo.id == github.event.pull_request.head.repo.id
+            && (
+              (github.event_name == 'schedule' && (github.ref == 'refs/heads/master'   || startsWith(github.ref, 'refs/tags/')))
+              ||
+              (github.event_name == 'push'     && (github.ref == 'refs/heads/master'   || startsWith(github.ref, 'refs/tags/')))
+              ||
+              (github.event_name == 'push'     && startsWith(github.ref, 'refs/heads/release-'))
+            )
 
+  # -----------------------------------------------------------------------------------------------
+  # Job: DEPLOY
+  # -----------------------------------------------------------------------------------------------
+  deploy:
+    needs: [build]
+    name: Deploy
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '8.2'
+    steps:
+
+      # ------------------------------------------------------------
+      # Setup repository
+      # ------------------------------------------------------------
+      - name: Checkout repository
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+
+      - name: Set variables
+        id: vars
+        run: |
+
+          # Retrieve git info (tags, etc)
+          git fetch --all
+
+          # Branch, Tag or Commit
+          GIT_TYPE="$( \
+            curl -sS https://raw.githubusercontent.com/cytopia/git-tools/master/git-info.sh \
+            | sh \
+            | grep '^GIT_TYPE' \
+            | sed 's|.*=||g' \
+          )"
+          # Branch name, Tag name or Commit Hash
+          GIT_SLUG="$( \
+            curl -sS https://raw.githubusercontent.com/cytopia/git-tools/master/git-info.sh \
+            | sh \
+            | grep '^GIT_NAME' \
+            | sed 's|.*=||g' \
+          )"
+          # Docker Tag
+          if [ "${GIT_TYPE}" = "BRANCH" ] && [ "${GIT_SLUG}" = "master" ]; then
+            DOCKER_TAG="latest"
+          else
+            DOCKER_TAG="${GIT_SLUG}"
+          fi
+
+          # Output
+          echo "GIT_TYPE=${GIT_TYPE}"
+          echo "GIT_SLUG=${GIT_SLUG}"
+          echo "DOCKER_TAG=${DOCKER_TAG}"
+
+          # Export variable
+          # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#environment-files
+          echo "GIT_TYPE=${GIT_TYPE}"     >> ${GITHUB_ENV}
+          echo "GIT_SLUG=${GIT_SLUG}"     >> ${GITHUB_ENV}
+          echo "DOCKER_TAG=${DOCKER_TAG}" >> ${GITHUB_ENV}
+
+
+      # ------------------------------------------------------------
+      # Deploy
+      # ------------------------------------------------------------
+      - name: Publish final multi-arch image (only repo owner)
+        run: |
+          retry() {
+            for n in $(seq ${RETRIES}); do
+              echo "[${n}/${RETRIES}] ${*}";
+              if eval "${*}"; then
+                echo "[SUCC] ${n}/${RETRIES}";
+                return 0;
+              fi;
+              sleep ${PAUSE};
+              echo "[FAIL] ${n}/${RETRIES}";
+            done;
+            return 1;
+          }
+
+          # Output
+          echo "GIT_TYPE=${GIT_TYPE}"
+          echo "GIT_SLUG=${GIT_SLUG}"
+          echo "DOCKER_TAG=${DOCKER_TAG}"
+
+          # Login
+          retry make login USER=${{ secrets.DOCKERHUB_USERNAME }} PASS=${{ secrets.DOCKERHUB_PASSWORD }}
+
+          # Create manifest
+          docker manifest create \
+            devilbox/php-fpm-8.2:${DOCKER_TAG} \
+            --amend devilbox/php-fpm-8.2:${DOCKER_TAG}-manifest-amd64 \
+            --amend devilbox/php-fpm-8.2:${DOCKER_TAG}-manifest-arm64
+
+          # Push manifest
+          docker manifest push devilbox/php-fpm-8.2:${DOCKER_TAG}
         env:
           RETRIES: 20
           PAUSE: 10

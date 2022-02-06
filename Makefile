@@ -13,6 +13,8 @@ DIR = .
 FILE = Dockerfile
 IMAGE = devilbox/php-fpm-8.2
 TAG = latest
+ARCH = linux/amd64
+NO_CACHE =
 
 
 # -------------------------------------------------------------------------------------------------
@@ -55,10 +57,11 @@ lint-workflow:
 # -------------------------------------------------------------------------------------------------
 
 build:
-	docker build -t $(IMAGE) -f $(DIR)/$(FILE) $(DIR)
+	docker buildx build --platform=$(ARCH) $(NO_CACHE) -t $(IMAGE) -f $(DIR)/$(FILE) $(DIR)
 
+rebuild: NO_CACHE=--no-cache
 rebuild: pull-base-image
-	docker build --no-cache -t $(IMAGE) -f $(DIR)/$(FILE) $(DIR)
+rebuild: build
 
 
 # -------------------------------------------------------------------------------------------------
@@ -66,11 +69,11 @@ rebuild: pull-base-image
 # -------------------------------------------------------------------------------------------------
 
 test:
-	./tests/test.sh $(IMAGE)
+	./tests/test.sh $(IMAGE) $(ARCH)
 
 update-readme:
 	cat "./README.md" \
-		| perl -00 -pe "s/<!-- modules -->.*<!-- \/modules -->/<!-- modules -->\n$$(./tests/get-modules.sh)\n<!-- \/modules -->/s" \
+		| perl -00 -pe "s/<!-- modules -->.*<!-- \/modules -->/<!-- modules -->\n$$(./tests/get-modules.sh $(IMAGE) $(ARCH))\n<!-- \/modules -->/s" \
 		> "./README.md.tmp"
 	yes | mv -f "./README.md.tmp" "./README.md"
 

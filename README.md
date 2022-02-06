@@ -11,6 +11,9 @@
 [![](https://images.microbadger.com/badges/image/devilbox/php-fpm-8.2.svg)](https://microbadger.com/images/devilbox/php-fpm-8.2 "php-fpm-8.2")
 [![License](https://img.shields.io/badge/license-MIT-%233DA639.svg)](https://opensource.org/licenses/MIT)
 
+
+**Supported Architectures:**  AMD64, ARM64
+
 This repository will provide you a fully functional PHP-FPM 8.2 Docker image built from [official sources](https://github.com/php/php-src) nightly. It provides the base for [Devilbox PHP-FPM Docker images](https://github.com/devilbox/docker-php-fpm).
 
 | Docker Hub | Upstream Project |
@@ -25,6 +28,7 @@ Have a look at the following similar Devilbox base images for which no official 
 * [PHP-FPM 5.3](https://github.com/devilbox/docker-php-fpm-5.3)
 * [PHP-FPM 7.4](https://github.com/devilbox/docker-php-fpm-7.4)
 * [PHP-FPM 8.0](https://github.com/devilbox/docker-php-fpm-8.0)
+* [PHP-FPM 8.1](https://github.com/devilbox/docker-php-fpm-8.1)
 * [PHP-FPM 8.2](https://github.com/devilbox/docker-php-fpm-8.2)
 
 In case you are looking for development and production ready PHP-FPM images for all versions,

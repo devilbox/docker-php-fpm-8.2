@@ -4,7 +4,10 @@ set -e
 set -u
 set -o pipefail
 
-MODULES="$( docker run --rm -t --entrypoint=php  devilbox/php-fpm-8.2 -m \
+IMAGE="${1:-devilbox/php-fpm-8.2}"
+ARCH="${2:-linux/amd64}"
+
+MODULES="$( docker run --rm -t --platform "${ARCH}" --entrypoint=php "${IMAGE}" -m \
 	| grep -vE '(^\[)|(^\s*$)' \
 	| sort -u -f
 )"

@@ -18,7 +18,6 @@ on:
 
 jobs:
 
-
   # -----------------------------------------------------------------------------------------------
   # Job: BUILD
   # -----------------------------------------------------------------------------------------------
@@ -190,8 +189,7 @@ jobs:
 
           # Login and Push
           retry make login USER=${{ secrets.DOCKERHUB_USERNAME }} PASS=${{ secrets.DOCKERHUB_PASSWORD }}
-          retry make push TAG=${DOCKER_TAG}-manifeset-${ARCH##*/}
-
+          retry make push TAG=${DOCKER_TAG}-manifest-${ARCH##*/}
         env:
           ARCH: ${{ matrix.arch }}
           RETRIES: 20
@@ -213,6 +211,11 @@ jobs:
     needs: [build]
     name: Deploy
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        version:
+          - '8.2'
     steps:
 
       # ------------------------------------------------------------
@@ -291,9 +294,9 @@ jobs:
 
           # Create manifest
           docker manifest create \
-            devilbox/php-fpm-8.2:${DOCKER_TAG}
-            --ammend devilbox/php-fpm-8.2:${DOCKER_TAG}-manifest-amd64 \
-            --ammend devilbox/php-fpm-8.2:${DOCKER_TAG}-manifest-arm64
+            devilbox/php-fpm-8.2:${DOCKER_TAG} \
+            --amend devilbox/php-fpm-8.2:${DOCKER_TAG}-manifest-amd64 \
+            --amend devilbox/php-fpm-8.2:${DOCKER_TAG}-manifest-arm64
 
           # Push manifest
           docker manifest push devilbox/php-fpm-8.2:${DOCKER_TAG}

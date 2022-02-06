@@ -20,16 +20,19 @@ on:
 # -------------------------------------------------------------------------------------------------
 jobs:
   nightly:
-    name: "[ PHP-${{ matrix.version }} ] (ref: ${{ matrix.refs }})"
+    name: "[ PHP-${{ matrix.version }} (${{ matrix.arch }})] (ref: ${{ matrix.refs }})"
     runs-on: ubuntu-latest
     strategy:
       fail-fast: False
       matrix:
         version:
           - '8.2'
+        arch:
+          - 'linux/amd64'
+          - 'linux/arm64'
         refs:
           - 'master'
-          - '0.1'
+          - '0.2'
     steps:
 
       # ------------------------------------------------------------
@@ -40,6 +43,16 @@ jobs:
         with:
           fetch-depth: 0
           ref: ${{ matrix.refs }}
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v1
+
+      - name: Set up Docker Buildx
+        id: buildx
+        uses: docker/setup-buildx-action@v1
+
+      - name: Available Docker Builx platforms
+        run: echo ${{ steps.buildx.outputs.platforms }}
 
       - name: Set variables
         id: vars
@@ -98,8 +111,9 @@ jobs:
             done;
             return 1;
           }
-          retry make build
+          retry make build ARCH=${ARCH}
         env:
+          ARCH: ${{ matrix.arch }}
           RETRIES: 20
           PAUSE: 10
 
@@ -120,8 +134,9 @@ jobs:
             done;
             return 1;
           }
-          retry make test
+          retry make test ARCH=${ARCH}
         env:
+          ARCH: ${{ matrix.arch }}
           RETRIES: 20
           PAUSE: 10
 
@@ -139,9 +154,10 @@ jobs:
             done;
             return 1;
           }
-          retry make update-readme
+          retry make update-readme ARCH=${ARCH}
           git diff --quiet || { echo "Build Changes"; git diff; git status; false; }
         env:
+          ARCH: ${{ matrix.arch }}
           RETRIES: 20
           PAUSE: 10
 

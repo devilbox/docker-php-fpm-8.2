@@ -57,7 +57,7 @@ lint-workflow:
 # -------------------------------------------------------------------------------------------------
 
 build:
-	docker buildx build --platform=$(ARCH) $(NO_CACHE) -t $(IMAGE) -f $(DIR)/$(FILE) $(DIR)
+	docker buildx build --output type=docker --platform=$(ARCH) $(NO_CACHE) -t $(IMAGE) -f $(DIR)/$(FILE) $(DIR)
 
 rebuild: NO_CACHE=--no-cache
 rebuild: pull-base-image
@@ -73,7 +73,7 @@ test:
 
 update-readme:
 	cat "./README.md" \
-		| perl -00 -pe "s/<!-- modules -->.*<!-- \/modules -->/<!-- modules -->\n$$(./tests/get-modules.sh $(IMAGE) $(ARCH))\n<!-- \/modules -->/s" \
+		| perl -0 -pe "s/<!-- modules -->.*<!-- \/modules -->/<!-- modules -->\n$$(./tests/get-modules.sh $(IMAGE) $(ARCH))\n<!-- \/modules -->/s" \
 		> "./README.md.tmp"
 	yes | mv -f "./README.md.tmp" "./README.md"
 

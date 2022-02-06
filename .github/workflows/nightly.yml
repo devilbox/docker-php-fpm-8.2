@@ -47,13 +47,13 @@ jobs:
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
+        with:
+          image: tonistiigi/binfmt:latest
+          platforms: arm64
 
       - name: Set up Docker Buildx
         id: buildx
         uses: docker/setup-buildx-action@v1
-
-      - name: Available Docker Builx platforms
-        run: echo ${{ steps.buildx.outputs.platforms }}
 
       - name: Set variables
         id: vars

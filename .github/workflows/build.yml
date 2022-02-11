@@ -32,6 +32,9 @@ jobs:
         arch:
           - 'linux/amd64'
           - 'linux/arm64'
+          - 'linux/386'
+          - 'linux/arm/v7'
+          - 'linux/arm/v6'
     steps:
 
       # ------------------------------------------------------------
@@ -46,7 +49,7 @@ jobs:
         uses: docker/setup-qemu-action@v1
         with:
           image: tonistiigi/binfmt:latest
-          platforms: arm64
+          platforms: all
 
       - name: Set Docker tag
         id: tag
@@ -208,7 +211,7 @@ jobs:
             return 1;
           }
           # Create manifest
-          retry make manifest-create TAG=${{ steps.tag.outputs.docker-tag }} ARCH="amd64 arm64"
+          retry make manifest-create TAG=${{ steps.tag.outputs.docker-tag }} ARCH="linux/amd64 linux/arm64 linux/386 linux/arm/v7 linux/arm/v6"
 
           # Push manifest
           retry make manifest-push TAG=${{ steps.tag.outputs.docker-tag }}

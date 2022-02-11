@@ -81,12 +81,12 @@ rebuild: build
 manifest-create:
 	@echo "docker manifest create \
 		$(IMAGE):$(TAG) \
-		$$( echo $(ARCH) | sed 's/,/ /g' | xargs -n1 sh -c 'printf -- " --amend $(IMAGE):$(TAG)-manifest-$${1##*/}"' -- )" \
+		$$( echo $(ARCH) | sed 's/,/ /g' | sed 's|/|-|g' | xargs -n1 sh -c 'printf -- " --amend $(IMAGE):$(TAG)-manifest-$${1}"' -- )" \
 	| sed 's/\s\s*/ /g' \
 	| sed 's/--/\\\n  --/g'
 	@echo "docker manifest create \
 		$(IMAGE):$(TAG) \
-		$$( echo $(ARCH) | sed 's/,/ /g' | xargs -n1 sh -c 'printf -- " --amend $(IMAGE):$(TAG)-manifest-$${1##*/}"' -- )" \
+		$$( echo $(ARCH) | sed 's/,/ /g' | sed 's|/|-|g' | xargs -n1 sh -c 'printf -- " --amend $(IMAGE):$(TAG)-manifest-$${1}"' -- )" \
 	| bash
 
 .PHONY: manifest-push
@@ -127,8 +127,8 @@ push:
 
 .PHONY: push-arch
 push-arch:
-	$(MAKE) tag TAG=$(TAG)-manifest-$(subst linux/,,$(ARCH))
-	docker push $(IMAGE):$(TAG)-manifest-$(subst linux/,,$(ARCH))
+	$(MAKE) tag TAG=$(TAG)-manifest-$(subst /,-,$(ARCH))
+	docker push $(IMAGE):$(TAG)-manifest-$(subst /,-,$(ARCH))
 
 
 # -------------------------------------------------------------------------------------------------

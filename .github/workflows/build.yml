@@ -10,8 +10,6 @@ name: build
 # When to run
 # -------------------------------------------------------------------------------------------------
 on:
-  # Runs on Pull Requests
-  pull_request:
   # Runs on Push
   push:
 

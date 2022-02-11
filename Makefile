@@ -48,7 +48,7 @@ lint-workflow:
 	GIT_CURR_MAJOR="$$( git tag | sort -V | tail -1 | sed 's|\.[0-9]*$$||g' )"; \
 	GIT_CURR_MINOR="$$( git tag | sort -V | tail -1 | sed 's|^[0-9]*\.||g' )"; \
 	GIT_NEXT_TAG="$${GIT_CURR_MAJOR}.$$(( GIT_CURR_MINOR + 1 ))"; \
-	grep 'refs:' -A 100 .github/workflows/nightly.yml \
+	grep 'refs:' -A 20 .github/workflows/nightly.yml \
 	| grep '^          -' \
 	| grep -v master \
 	| while read -r i; do \

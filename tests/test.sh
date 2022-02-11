@@ -7,5 +7,10 @@ set -o pipefail
 IMAGE="${1:-devilbox/php-fpm-8.2}"
 ARCH="${2:-linux/amd64}"
 
+echo
+echo "\$ docker run --rm --platform ${ARCH} --entrypoint=php ${IMAGE} -v | grep -E '^PHP 8\.2'"
 docker run --rm --platform "${ARCH}" --entrypoint=php "${IMAGE}" -v | grep -E '^PHP 8\.2'
+
+echo
+echo "\$ docker run --rm --platform ${ARCH} --entrypoint=php-fpm ${IMAGE} -v | grep -E '^PHP 8\.2'"
 docker run --rm --platform "${ARCH}" --entrypoint=php-fpm "${IMAGE}" -v | grep -E '^PHP 8\.2'

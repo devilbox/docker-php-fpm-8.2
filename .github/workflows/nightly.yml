@@ -53,7 +53,7 @@ jobs:
 
       - name: Set Docker tag
         id: tag
-        uses: cytopia/docker-tag@v0.2
+        uses: cytopia/docker-tag@v0.3
 
       # ------------------------------------------------------------
       # Build
@@ -126,6 +126,12 @@ jobs:
       # ------------------------------------------------------------
       # Deploy
       # ------------------------------------------------------------
+      - name: Login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
       - name: Publish architecture images (only repo owner)
         run: |
           retry() {
@@ -140,10 +146,6 @@ jobs:
             done;
             return 1;
           }
-          # Login
-          retry make login USER=${{ secrets.DOCKERHUB_USERNAME }} PASS=${{ secrets.DOCKERHUB_PASSWORD }}
-
-          # Push arch-specific image (for later manifest creation)
           retry make push-arch TAG=${{ steps.tag.outputs.docker-tag }} ARCH=${ARCH}
         env:
           ARCH: ${{ matrix.arch }}
@@ -187,11 +189,17 @@ jobs:
 
       - name: Set Docker tag
         id: tag
-        uses: cytopia/docker-tag@v0.2
+        uses: cytopia/docker-tag@v0.3
 
       # ------------------------------------------------------------
       # Deploy
       # ------------------------------------------------------------
+      - name: Login
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_PASSWORD }}
+
       - name: Publish final multi-arch image (only repo owner)
         run: |
           retry() {
@@ -206,9 +214,6 @@ jobs:
             done;
             return 1;
           }
-          # Login
-          retry make login USER=${{ secrets.DOCKERHUB_USERNAME }} PASS=${{ secrets.DOCKERHUB_PASSWORD }}
-
           # Create manifest
           retry make manifest-create TAG=${{ steps.tag.outputs.docker-tag }} ARCH="amd64 arm64"
 

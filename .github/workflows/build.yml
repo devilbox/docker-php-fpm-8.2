@@ -48,49 +48,9 @@ jobs:
           image: tonistiigi/binfmt:latest
           platforms: arm64
 
-      - name: Set up Docker Buildx
-        id: buildx
-        uses: docker/setup-buildx-action@v1
-
-      - name: Set variables
-        id: vars
-        run: |
-
-          # Retrieve git info (tags, etc)
-          git fetch --all
-
-          # Branch, Tag or Commit
-          GIT_TYPE="$( \
-            curl -sS https://raw.githubusercontent.com/cytopia/git-tools/master/git-info.sh \
-            | sh \
-            | grep '^GIT_TYPE' \
-            | sed 's|.*=||g' \
-          )"
-          # Branch name, Tag name or Commit Hash
-          GIT_SLUG="$( \
-            curl -sS https://raw.githubusercontent.com/cytopia/git-tools/master/git-info.sh \
-            | sh \
-            | grep '^GIT_NAME' \
-            | sed 's|.*=||g' \
-          )"
-          # Docker Tag
-          if [ "${GIT_TYPE}" = "BRANCH" ] && [ "${GIT_SLUG}" = "master" ]; then
-            DOCKER_TAG="latest"
-          else
-            DOCKER_TAG="${GIT_SLUG}"
-          fi
-
-          # Output
-          echo "GIT_TYPE=${GIT_TYPE}"
-          echo "GIT_SLUG=${GIT_SLUG}"
-          echo "DOCKER_TAG=${DOCKER_TAG}"
-
-          # Export variable
-          # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#environment-files
-          echo "GIT_TYPE=${GIT_TYPE}"     >> ${GITHUB_ENV}
-          echo "GIT_SLUG=${GIT_SLUG}"     >> ${GITHUB_ENV}
-          echo "DOCKER_TAG=${DOCKER_TAG}" >> ${GITHUB_ENV}
-
+      - name: Set Docker tag
+        id: tag
+        uses: cytopia/docker-tags@v0.2
 
       # ------------------------------------------------------------
       # Build
@@ -177,19 +137,11 @@ jobs:
             done;
             return 1;
           }
-
-          # Output
-          echo "GIT_TYPE=${GIT_TYPE}"
-          echo "GIT_SLUG=${GIT_SLUG}"
-          echo "DOCKER_TAG=${DOCKER_TAG}"
-
-          # Tag image
-          retry make tag TAG=${DOCKER_TAG}
-          docker images
-
-          # Login and Push
+          # Login
           retry make login USER=${{ secrets.DOCKERHUB_USERNAME }} PASS=${{ secrets.DOCKERHUB_PASSWORD }}
-          retry make push TAG=${DOCKER_TAG}-manifest-${ARCH##*/}
+
+          # Push arch-specific image (for later manifest creation)
+          retry make push-arch TAG=${{ steps.tag.outputs.docker-tag }} ARCH=${ARCH}
         env:
           ARCH: ${{ matrix.arch }}
           RETRIES: 20
@@ -226,45 +178,9 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set variables
-        id: vars
-        run: |
-
-          # Retrieve git info (tags, etc)
-          git fetch --all
-
-          # Branch, Tag or Commit
-          GIT_TYPE="$( \
-            curl -sS https://raw.githubusercontent.com/cytopia/git-tools/master/git-info.sh \
-            | sh \
-            | grep '^GIT_TYPE' \
-            | sed 's|.*=||g' \
-          )"
-          # Branch name, Tag name or Commit Hash
-          GIT_SLUG="$( \
-            curl -sS https://raw.githubusercontent.com/cytopia/git-tools/master/git-info.sh \
-            | sh \
-            | grep '^GIT_NAME' \
-            | sed 's|.*=||g' \
-          )"
-          # Docker Tag
-          if [ "${GIT_TYPE}" = "BRANCH" ] && [ "${GIT_SLUG}" = "master" ]; then
-            DOCKER_TAG="latest"
-          else
-            DOCKER_TAG="${GIT_SLUG}"
-          fi
-
-          # Output
-          echo "GIT_TYPE=${GIT_TYPE}"
-          echo "GIT_SLUG=${GIT_SLUG}"
-          echo "DOCKER_TAG=${DOCKER_TAG}"
-
-          # Export variable
-          # https://docs.github.com/en/free-pro-team@latest/actions/reference/workflow-commands-for-github-actions#environment-files
-          echo "GIT_TYPE=${GIT_TYPE}"     >> ${GITHUB_ENV}
-          echo "GIT_SLUG=${GIT_SLUG}"     >> ${GITHUB_ENV}
-          echo "DOCKER_TAG=${DOCKER_TAG}" >> ${GITHUB_ENV}
-
+      - name: Set Docker tag
+        id: tag
+        uses: cytopia/docker-tags@v0.2
 
       # ------------------------------------------------------------
       # Deploy
@@ -283,23 +199,14 @@ jobs:
             done;
             return 1;
           }
-
-          # Output
-          echo "GIT_TYPE=${GIT_TYPE}"
-          echo "GIT_SLUG=${GIT_SLUG}"
-          echo "DOCKER_TAG=${DOCKER_TAG}"
-
           # Login
           retry make login USER=${{ secrets.DOCKERHUB_USERNAME }} PASS=${{ secrets.DOCKERHUB_PASSWORD }}
 
           # Create manifest
-          docker manifest create \
-            devilbox/php-fpm-8.2:${DOCKER_TAG} \
-            --amend devilbox/php-fpm-8.2:${DOCKER_TAG}-manifest-amd64 \
-            --amend devilbox/php-fpm-8.2:${DOCKER_TAG}-manifest-arm64
+          retry make manifest-create TAG=${{ steps.tag.outputs.docker-tag }} ARCH="amd64 arm64"
 
           # Push manifest
-          docker manifest push devilbox/php-fpm-8.2:${DOCKER_TAG}
+          retry make manifest-push TAG=${{ steps.tag.outputs.docker-tag }}
         env:
           RETRIES: 20
           PAUSE: 10

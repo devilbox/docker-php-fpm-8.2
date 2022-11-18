@@ -94,6 +94,7 @@ RUN set -eux; \
 #	fi; \
 	git clone -b PHP-8.2 --single-branch https://github.com/php/php-src php; \
 	cd php; \
+	\
 	#	git checkout "$( \
 	#		git for-each-ref --format='%(refname)' refs/tags \
 	#		| grep -E 'refs/tags/php-8\.1[.0-9]+$' \

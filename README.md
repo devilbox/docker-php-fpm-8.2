@@ -123,6 +123,7 @@ modules enabled by default visit: **[devilbox/docker-php-fpm](https://github.com
 | pdo_sqlite   | ✔         |
 | Phar         | ✔         |
 | posix        | ✔         |
+| random       | ✔         |
 | readline     | ✔         |
 | Reflection   | ✔         |
 | session      | ✔         |

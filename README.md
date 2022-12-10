@@ -1,23 +1,23 @@
 # PHP-FPM 8.2
 
+[![Tag](https://img.shields.io/github/tag/devilbox/docker-php-fpm-8.2.svg)](https://github.com/devilbox/docker-php-fpm-8.2/releases)
 [![lint](https://github.com/devilbox/docker-php-fpm-8.2/workflows/lint/badge.svg)](https://github.com/devilbox/docker-php-fpm-8.2/actions?query=workflow%3Alint)
 [![build](https://github.com/devilbox/docker-php-fpm-8.2/workflows/build/badge.svg)](https://github.com/devilbox/docker-php-fpm-8.2/actions?query=workflow%3Abuild)
 [![nightly](https://github.com/devilbox/docker-php-fpm-8.2/workflows/nightly/badge.svg)](https://github.com/devilbox/docker-php-fpm-8.2/actions?query=workflow%3Anightly)
+[![License](https://img.shields.io/badge/license-MIT-%233DA639.svg)](https://opensource.org/licenses/MIT)
 
-[![Tag](https://img.shields.io/github/tag/devilbox/docker-php-fpm-8.2.svg)](https://github.com/devilbox/docker-php-fpm-8.2/releases)
 [![Gitter](https://badges.gitter.im/devilbox/Lobby.svg)](https://gitter.im/devilbox/Lobby?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Discourse](https://img.shields.io/discourse/https/devilbox.discourse.group/status.svg?colorB=%234CB697)](https://devilbox.discourse.group)
-[![](https://images.microbadger.com/badges/version/devilbox/php-fpm-8.2.svg)](https://microbadger.com/images/devilbox/php-fpm-8.2 "php-fpm-8.2")
-[![](https://images.microbadger.com/badges/image/devilbox/php-fpm-8.2.svg)](https://microbadger.com/images/devilbox/php-fpm-8.2 "php-fpm-8.2")
-[![License](https://img.shields.io/badge/license-MIT-%233DA639.svg)](https://opensource.org/licenses/MIT)
 
 **Available Architectures:**  `amd64`, `i386`, `arm64`, `arm/v7`, `arm/v6`
 
+[![](https://img.shields.io/docker/pulls/devilbox/php-fpm-8.2.svg)](https://hub.docker.com/r/devilbox/php-fpm-8.2)
+
 This repository will provide you a fully functional PHP-FPM 8.2 Docker image built from [official sources](https://github.com/php/php-src) nightly. It provides the base for [Devilbox PHP-FPM Docker images](https://github.com/devilbox/docker-php-fpm).
 
-| Docker Hub | Upstream Project |
-|------------|------------------|
-| <a href="https://hub.docker.com/r/devilbox/php-fpm-8.2"><img height="82px" src="http://dockeri.co/image/devilbox/php-fpm-8.2" /></a> | <a href="https://github.com/cytopia/devilbox" ><img height="82px" src="https://raw.githubusercontent.com/devilbox/artwork/master/submissions_banner/cytopia/01/png/banner_256_trans.png" /></a> |
+| Reference Project |
+|-------------------|
+| <a href="https://github.com/cytopia/devilbox" ><img height="82px" src="https://raw.githubusercontent.com/devilbox/artwork/master/submissions_banner/cytopia/01/png/banner_256_trans.png" /></a> |
 
 ## Similar Base Images
 
